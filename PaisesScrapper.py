@@ -11,7 +11,8 @@ class PaisesScrapper():
         estructura = BeautifulSoup(pagina.content, "html.parser")
         return estructura
 
-    def __lista_paises_links(self, estructura):
+    def __lista_paises_links(self):
+        esructura = self.__Baja_HTML(self.url)
         estructura.findAll('div')
         midiv = estructura.find_all('div',{'class':'container'})
         m = midiv[0]
