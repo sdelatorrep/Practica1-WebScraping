@@ -51,23 +51,23 @@ class PaisesScraper:
 
     def lista_paises_links(self):
         estructura = self.baja_html(self.url)
-        midiv = estructura.find_all('div', {'class': 'container'})
+        midiv = estructura.find_all("div", {"class": "container"})
         lista_paises = list()
-        for link in midiv[0].find_all('a'):
+        for link in midiv[0].find_all("a"):
             pais = list()
             pais.append(link.string)
-            pais.append(self.raiz+link.get('href'))
+            pais.append(self.raiz+link.get("href"))
             lista_paises.append(pais)
         return lista_paises
     
     def lista_indicadores_links(self, url):
         estructura = self.baja_html(url)
-        midiv = estructura.find_all('a', string=self.indicadores)
+        midiv = estructura.find_all("a", string=self.indicadores)
         lista_links = list()
         for link in midiv:
             indicador = list()
             indicador.append(link.string)
-            indicador.append(link.get('href'))
+            indicador.append(link.get("href"))
             lista_links.append(indicador)
         return lista_links
 
