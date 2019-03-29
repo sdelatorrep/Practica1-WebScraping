@@ -1,15 +1,19 @@
+#!/usr/bin/env python3.5
+# -*- coding: UTF-8 -*-
+
 from bs4 import BeautifulSoup
 import requests
 
-class PaisesScrapper():
+
+class PaisesScraper:
 
     def __init__(self):
         self.url = "https://knoema.es/atlas"
-        self.raiz="https://knoema.es"
-        self.indicadores =[]
-        self.__Lista_Indicadores()
+        self.raiz = "https://knoema.es"
+        self.indicadores = list()
+        self.lista_indicadores()
 
-    def __Lista_Indicadores(self):
+    def lista_indicadores(self):
         self.indicadores.append("PIB")
         self.indicadores.append("Inflación del IPC")
         self.indicadores.append("Tasa de desempleo")
@@ -39,38 +43,39 @@ class PaisesScrapper():
         self.indicadores.append("Usuarios de internet, % de la población")
         self.indicadores.append("Accidentes con heridos (tráfico)")
 
-    def __Baja_HTML(self, url):
+    @staticmethod
+    def baja_html(url):
         pagina = requests.get(url)
         estructura = BeautifulSoup(pagina.content, "html.parser")
         return estructura
 
-    def __lista_paises_links(self):
-        estructura = self.__Baja_HTML(self.url)
-        midiv = estructura.find_all('div',{'class':'container'})
-        lista_paises=[]
+    def lista_paises_links(self):
+        estructura = self.baja_html(self.url)
+        midiv = estructura.find_all('div', {'class': 'container'})
+        lista_paises = list()
         for link in midiv[0].find_all('a'):
-            pais = []
+            pais = list()
             pais.append(link.string)
             pais.append(self.raiz+link.get('href'))
             lista_paises.append(pais)
         return lista_paises
     
-    def __lista_indicadores_links(self, url):
-        estructura = self.__Baja_HTML(url)
-        midiv = estructura.find_all('a', string =self.indicadores)
-        lista_links=[]
+    def lista_indicadores_links(self, url):
+        estructura = self.baja_html(url)
+        midiv = estructura.find_all('a', string=self.indicadores)
+        lista_links = list()
         for link in midiv:
-            indicador = []
+            indicador = list()
             indicador.append(link.string)
             indicador.append(link.get('href'))
             lista_links.append(indicador)
         return lista_links
 
-    def Inicio_Prueba(self):
-        paises = self.__lista_paises_links()
+    def inicio_prueba(self):
+        paises = self.lista_paises_links()
         for p in paises:
             url = p[1]
-            indicadores = self.__lista_indicadores_links(url)
+            indicadores = self.lista_indicadores_links(url)
             print(url)
             print(indicadores)
             break

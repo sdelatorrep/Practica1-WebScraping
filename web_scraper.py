@@ -3,10 +3,13 @@
 
 
 import logging
+from paises_scraper import PaisesScraper
 
 
 def main():
-    logging.debug("Hello!")
+    # logging.debug("Hello!")
+    scraper = PaisesScraper()
+    scraper.inicio_prueba()
 
 
 if __name__ == "__main__":
