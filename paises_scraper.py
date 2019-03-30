@@ -141,12 +141,86 @@ class PaisesScraper:
         if len(indicadores_no_encontrados) > 0:
             logging.error("Faltan indicadores! {}".format(indicadores_no_encontrados))
             exit(1)
+            
+    def buscar_valores(self, url):
+        """
+        Recupera los datos de cada indicador
+        :param buscar_valores:
+        :param url:
+        :return:
+        """
+        estructura = self.baja_html(url)
+        midiv = estructura.find_all('td',{'class':None})
+        # Obtenemos una lista donde el primer valor es el año
+        # y el segundo el valor del indicador
+        i = 0
+        lista_valores= list()
+        for x in midiv:
+            # Inicializamos la lsita cada 2 valores
+            if i % 2 == 0:
+                lista_pares = list()
 
+            lista_pares.append(x.string)
+
+            # Añadimos a la lista de valroes cuando tenemos la dupla de datos.
+            if i % 2 != 0:
+                lista_valores.append(lista_pares)
+            i = i + 1
+        return lista_valores
+    
+    def lista_vacia(self):
+        """
+        Devuelve una lista de indicadores vacia
+        :param lista_vacia:
+        :return:
+        """
+        lista = list()
+        for ind in self.indicadores:
+            lista.append(0)
+       
+        return lista
+    
     def inicio_prueba(self):
+        lista_definitiva = list()
         paises = self.lista_paises_links()
         for p in paises:
             url = p[1]
             indicadores = self.buscar_links_indicadores(url)
+            # Creamos lista de años y sus indicadores vacios
+            def_pais = list()
+            def_indicadores = list()
+            for ind in indicadores:
+                url = ind[1]
+                valores = self.buscar_valores(url)
+                #*******************************************************
+                # Montamos las listas para facilitar su escritura a csv
+                #*******************************************************
+                pos_ind = self.indicadores.index(ind[0])
+                for v in valores:
+                    # Comprobamos si el año ya ha sido tratado, si no creamos la estructura
+                    if v[0] in def_pais:
+                        pos = def_pais.index(v[0])
+                    else:
+                        def_pais.append(v[0])
+                        def_indicadores.append(self.lista_vacia())   
+                        pos = len(def_pais)-1
+                        
+                        
+                    # Ponemos el valor en el sitio que le pertenece.
+                    def_indicadores[pos][pos_ind] = v[1] 
+                    
+            #*******************************************************
+            # Ahora ya podemos montar una lista con pais, año, indicadores.
+            #*******************************************************
+            
+            for i in range(len(def_pais)):
+                lista = list()
+                lista.append(p[0])
+                lista.append(def_pais[i])
+                lista.extend(def_indicadores[i]) 
+                lista_definitiva.append(lista)
+                
+            print(lista_definitiva)
             logging.debug("URL: {}".format(url))
             logging.debug("Indicadores: {}".format(indicadores))
             break
