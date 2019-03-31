@@ -7,9 +7,13 @@ from paises_scraper import PaisesScraper
 
 
 def main():
-    # logging.debug("Hello!")
+    logging.debug("Inicio web scraping")
+
     scraper = PaisesScraper()
-    scraper.inicio_prueba()
+    scraper.obtener_datos("indicadores.csv")
+    # scraper.obtener_datos_con_diccionarios("indicadores_v2.csv")
+
+    logging.debug("Fin web scraping")
 
 
 if __name__ == "__main__":
