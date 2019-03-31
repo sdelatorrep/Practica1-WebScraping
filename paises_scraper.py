@@ -4,6 +4,8 @@
 from bs4 import BeautifulSoup
 import requests
 import logging
+import csv
+import time
 
 
 logging.getLogger()
@@ -23,14 +25,12 @@ class PaisesScraper:
         self.indicadores.append("Tasa de desempleo")
         self.indicadores.append("Importaciones de bienes y servicios")
         self.indicadores.append("Exportaciones de bienes y servicios")
-        # self.indicadores.append("Demografia")
         self.indicadores.append("Población")
         self.indicadores.append("Tasa de natalidad")
         self.indicadores.append("Tasa de mortalidad")
         self.indicadores.append("Tasa de fecundidad")
         self.indicadores.append("Esperanza de vida al nacer")
         self.indicadores.append("Relación empleo/población")
-        # self.indicadores.append("Uso Tierra")
         self.indicadores.append("Terrenos agrícolas (km2)")
         self.indicadores.append("Zona forestal")
         self.indicadores.append("Mortalidad infantil")
@@ -46,7 +46,7 @@ class PaisesScraper:
         self.indicadores.append("Happiness")
         self.indicadores.append("Usuarios de internet, % de la población")
         self.indicadores.append("Accidentes con heridos")
-        # logging.debug("Total indicadores: {}".format(len(self.indicadores)))
+        logging.debug("Total indicadores: {}".format(len(self.indicadores)))
 
     @staticmethod
     def baja_html(url):
@@ -57,17 +57,14 @@ class PaisesScraper:
     def lista_paises_links(self):
         """
         Obtiene la URL de cada país
-        :return:
+        :return: tupla (nombre_pais, url_pais)
         """
         estructura = self.baja_html(self.url)
         midiv = estructura.find_all("div", {"class": "container"})
         lista_paises = list()
         for link in midiv[0].find_all("a"):
-            pais = list()
-            pais.append(link.string)
-            pais.append(self.raiz + link.get("href"))
-            # logging.debug("Pais: {}".format(pais))
-            lista_paises.append(pais)
+            url = self.raiz + link.get("href")
+            lista_paises.append((link.string, url))
 
         return lista_paises
     
@@ -75,7 +72,7 @@ class PaisesScraper:
         """
         Obtiene la URL de cada indicador
         :param url:
-        :return:
+        :return: tupla (nombre_indicador, url_indicador)
         """
         estructura = self.baja_html(url)
         midiv = estructura.find_all("a", string=self.indicadores)
@@ -85,7 +82,7 @@ class PaisesScraper:
 
         indicadores_no_encontrados = self.revisar_indicadores(lista_links)
         if len(indicadores_no_encontrados) > 0:
-            self.buscar_mas_indicadores(indicadores_no_encontrados, lista_links, url)
+            self.buscar_mas_indicadores(lista_links, url)
         return lista_links
 
     def revisar_indicadores(self, lista_links):
@@ -109,10 +106,9 @@ class PaisesScraper:
                     logging.error("Indicador no encontrado: {}".format(ind))
         return indicadores_no_encontrados
 
-    def buscar_mas_indicadores(self, indicadores_no_encontrados, lista_links, url):
+    def buscar_mas_indicadores(self, lista_links, url):
         """
         Algunos indicadores no aparecen en la página principal y hay que ir a buscarlos a .../topics/...
-        :param indicadores_no_encontrados:
         :param lista_links:
         :param url:
         :return:
@@ -122,7 +118,6 @@ class PaisesScraper:
         for tag in todos_tag_a:
             href = tag.get('href', None)
             if href is not None and "topics" in href and href.startswith('https'):
-                # logging.debug("Tema: {}".format(href))
                 estructura_tema = self.baja_html(href)
                 mi_div = estructura_tema.find_all("a", string=self.indicadores)
                 for link in mi_div:
@@ -145,24 +140,23 @@ class PaisesScraper:
     def buscar_valores(self, url):
         """
         Recupera los datos de cada indicador
-        :param buscar_valores:
         :param url:
-        :return:
+        :return: lista de pares de valores
         """
         estructura = self.baja_html(url)
-        midiv = estructura.find_all('td',{'class':None})
+        midiv = estructura.find_all('td', {'class': None})
         # Obtenemos una lista donde el primer valor es el año
         # y el segundo el valor del indicador
         i = 0
-        lista_valores= list()
+        lista_valores = list()
         for x in midiv:
-            # Inicializamos la lsita cada 2 valores
+            # Inicializamos la lista cada 2 valores
             if i % 2 == 0:
                 lista_pares = list()
 
             lista_pares.append(x.string)
 
-            # Añadimos a la lista de valroes cuando tenemos la dupla de datos.
+            # Añadimos a la lista de valores cuando tenemos la dupla de datos.
             if i % 2 != 0:
                 lista_valores.append(lista_pares)
             i = i + 1
@@ -175,52 +169,132 @@ class PaisesScraper:
         :return:
         """
         lista = list()
-        for ind in self.indicadores:
+        for _ in self.indicadores:
             lista.append(0)
        
         return lista
-    
-    def inicio_prueba(self):
+
+    def obtener_datos(self, fichero):
         lista_definitiva = list()
         paises = self.lista_paises_links()
-        for p in paises:
-            url = p[1]
-            indicadores = self.buscar_links_indicadores(url)
-            # Creamos lista de años y sus indicadores vacios
-            def_pais = list()
-            def_indicadores = list()
-            for ind in indicadores:
-                url = ind[1]
-                valores = self.buscar_valores(url)
-                #*******************************************************
-                # Montamos las listas para facilitar su escritura a csv
-                #*******************************************************
-                pos_ind = self.indicadores.index(ind[0])
-                for v in valores:
-                    # Comprobamos si el año ya ha sido tratado, si no creamos la estructura
-                    if v[0] in def_pais:
-                        pos = def_pais.index(v[0])
-                    else:
-                        def_pais.append(v[0])
-                        def_indicadores.append(self.lista_vacia())   
-                        pos = len(def_pais)-1
-                        
-                        
-                    # Ponemos el valor en el sitio que le pertenece.
-                    def_indicadores[pos][pos_ind] = v[1] 
-                    
-            #*******************************************************
-            # Ahora ya podemos montar una lista con pais, año, indicadores.
-            #*******************************************************
-            
-            for i in range(len(def_pais)):
-                lista = list()
-                lista.append(p[0])
-                lista.append(def_pais[i])
-                lista.extend(def_indicadores[i]) 
-                lista_definitiva.append(lista)
-                
-            print(lista_definitiva)
-            logging.debug("URL: {}".format(url))
-            logging.debug("Indicadores: {}".format(indicadores))
+        with open(fichero, "w", encoding="UTF-8", newline='') as f:
+            # Añadimos la cabecera
+            csv_writer = csv.writer(f, quotechar='|', delimiter=';', quoting=csv.QUOTE_MINIMAL)
+            cabecera = list()
+            cabecera.append("Pais")
+            cabecera.append("Año")
+            cabecera.extend(self.indicadores)
+            csv_writer.writerow(cabecera)
+
+            # Obtenemos los datos
+            for nombre_pais, url_pais in paises:
+                indicadores = self.buscar_links_indicadores(url_pais)
+                # Creamos lista de años y sus indicadores vacios
+                def_pais = list()
+                def_indicadores = list()
+                for nombre_indicador, url_indicador in indicadores:
+                    t0 = time.time()
+                    valores = self.buscar_valores(url_indicador)
+                    retardo_respuesta = time.time() - t0
+                    # Espera de 3x, segun el tiempo de respuesta
+                    time.sleep(3 * retardo_respuesta)
+
+                    # *******************************************************
+                    # Montamos las listas para facilitar su escritura a csv
+                    # *******************************************************
+                    pos_ind = self.indicadores.index(nombre_indicador)
+                    for v in valores:
+                        # Comprobamos si el año ya ha sido tratado, si no creamos la estructura
+                        if v[0] in def_pais:
+                            pos = def_pais.index(v[0])
+                        else:
+                            def_pais.append(v[0])
+                            def_indicadores.append(self.lista_vacia())
+                            pos = len(def_pais) - 1
+
+                        # Ponemos el valor en el sitio que le pertenece.
+                        def_indicadores[pos][pos_ind] = v[1]
+
+                # *******************************************************
+                # Ahora ya podemos montar una lista con pais, año, indicadores.
+                # *******************************************************
+
+                for i in range(len(def_pais)):
+                    lista = list()
+                    lista.append(nombre_pais)
+                    lista.append(def_pais[i])
+                    lista.extend(def_indicadores[i])
+                    lista_definitiva.append(lista)
+
+                # print(lista_definitiva)
+
+                # Escribimos los datos en un fichero
+                for l in lista_definitiva:
+                    csv_writer.writerow(l)
+
+                # logging.debug("URL: {}".format(url))
+                # logging.debug("Indicadores: {}".format(indicadores))
+                break
+
+    @staticmethod
+    def ini_diccionario(valores):
+        diccionario = dict()
+        for ind in valores:
+            diccionario[ind] = None
+        return diccionario
+
+    def obtener_datos_con_diccionarios(self, fichero):
+        """
+        Guarda los datos de los indicadores por país y año en la siguiente estructura:
+        pais 0
+            anyo 0
+                indicador 0, valor 0
+                indicador 1, valor 1
+            anyo 1
+                indicador 0, valor 0
+                ...
+        ...
+        Finalmente, guarda el resultado de cada indicador en un CSV
+        :return:
+        """
+        # Obtenemos los datos
+        dicc_paises = dict()
+        paises = self.lista_paises_links()
+        for nombre_pais, url_pais in paises:
+            anyos_por_pais = dicc_paises.get(nombre_pais, dict())
+            urls_indicadores = self.buscar_links_indicadores(url_pais)
+            for nombre_ind, url_ind in urls_indicadores:
+                t0 = time.time()
+                valores = self.buscar_valores(url_ind)
+                retardo_respuesta = time.time() - t0
+                # Espera de 2x, segun el tiempo de respuesta
+                time.sleep(2 * retardo_respuesta)
+
+                for val in valores:
+                    anyo = val[0]
+                    valor = val[1]
+                    indicadores_por_anyo = anyos_por_pais.get(anyo, self.ini_diccionario(self.indicadores))
+                    indicadores_por_anyo[nombre_ind] = valor
+                    anyos_por_pais[anyo] = indicadores_por_anyo
+            dicc_paises[nombre_pais] = anyos_por_pais
             break
+
+        # Volcamos los datos en un fichero
+        with open(fichero, "w", encoding="UTF-8", newline='') as f:
+            # Añadimos la cabecera
+            csv_writer = csv.writer(f, quotechar='|', delimiter=';', quoting=csv.QUOTE_MINIMAL)
+            cabecera = list()
+            cabecera.append("Pais")
+            cabecera.append("Año")
+            cabecera.extend(self.indicadores)
+            csv_writer.writerow(cabecera)
+
+            for nombre_pais, valores_pais in dicc_paises.items():
+                for anyo, valores_anyo in valores_pais.items():
+                    linea = list()
+                    linea.append(nombre_pais)
+                    linea.append(anyo)
+                    for _, valor in valores_anyo.items():
+                        linea.append(valor)
+
+                    csv_writer.writerow(linea)
