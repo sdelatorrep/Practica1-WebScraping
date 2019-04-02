@@ -28,7 +28,7 @@ class PaisesScraper:
         self.indicadores.append("Población")
         self.indicadores.append("Tasa de natalidad")
         self.indicadores.append("Tasa de mortalidad")
-        self.indicadores.append("Tasa de fecundidad")
+        self.indicadores.append("Densidad de la población")
         self.indicadores.append("Esperanza de vida al nacer")
         self.indicadores.append("Relación empleo/población")
         self.indicadores.append("Terrenos agrícolas (km2)")
