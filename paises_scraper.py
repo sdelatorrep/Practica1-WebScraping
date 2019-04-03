@@ -45,7 +45,7 @@ class PaisesScraper:
         self.indicadores.append("Índice de Desarrollo Humano")
         self.indicadores.append("Happiness")
         self.indicadores.append("Usuarios de internet, % de la población")
-        self.indicadores.append("Accidentes con heridos")
+        # self.indicadores.append("Accidentes con heridos")
         logging.debug("Total indicadores: {}".format(len(self.indicadores)))
 
     @staticmethod
@@ -234,7 +234,7 @@ class PaisesScraper:
 
                 # logging.debug("URL: {}".format(url))
                 # logging.debug("Indicadores: {}".format(indicadores))
-                break
+                # break
 
     @staticmethod
     def ini_diccionario(valores):
