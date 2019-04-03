@@ -52,7 +52,7 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
+#*.log
 local_settings.py
 db.sqlite3
 
@@ -105,4 +105,3 @@ venv.bak/
 
 .idea/
 
-*.log
