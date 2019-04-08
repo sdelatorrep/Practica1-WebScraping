@@ -51,7 +51,7 @@ class PaisesScraper:
         # self.indicadores.append("Accidentes con heridos")
         logging.debug("Total indicadores: {}".format(len(self.indicadores)))
 
-    #@staticmethod
+    # @staticmethod
     def baja_html(self, url):
         pagina = requests.get(url,
                               headers = self.request_head)
