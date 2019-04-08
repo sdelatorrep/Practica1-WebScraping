@@ -18,6 +18,8 @@ class PaisesScraper:
         self.raiz = "https://knoema.es"
         self.indicadores = list()
         self.lista_indicadores()
+        self.user_agent = 'Changing user-agent not to be blocked'
+        self.request_head = {'User-Agent': self.user_agent}
 
     def lista_indicadores(self):
         self.indicadores.append("PIB")
@@ -50,7 +52,8 @@ class PaisesScraper:
 
     @staticmethod
     def baja_html(url):
-        pagina = requests.get(url)
+        pagina = requests.get(url,
+                              headers = self.request_head)
         estructura = BeautifulSoup(pagina.content, "html.parser")
         return estructura
 
