@@ -16,10 +16,11 @@ class PaisesScraper:
     def __init__(self):
         self.url = "https://knoema.es/atlas"
         self.raiz = "https://knoema.es"
-        self.indicadores = list()
-        self.lista_indicadores()
         self.user_agent = 'Changing user-agent not to be blocked'
         self.request_head = {'User-Agent': self.user_agent}
+        self.indicadores = list()
+        self.lista_indicadores()
+        
 
     def lista_indicadores(self):
         self.indicadores.append("PIB")
@@ -50,8 +51,8 @@ class PaisesScraper:
         # self.indicadores.append("Accidentes con heridos")
         logging.debug("Total indicadores: {}".format(len(self.indicadores)))
 
-    @staticmethod
-    def baja_html(url):
+    #@staticmethod
+    def baja_html(self, url):
         pagina = requests.get(url,
                               headers = self.request_head)
         estructura = BeautifulSoup(pagina.content, "html.parser")
