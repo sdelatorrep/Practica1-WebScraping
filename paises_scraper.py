@@ -6,6 +6,7 @@ import requests
 import logging
 import csv
 import time
+import urllib.robotparser
 
 
 logging.getLogger()
@@ -16,11 +17,13 @@ class PaisesScraper:
     def __init__(self):
         self.url = "https://knoema.es/atlas"
         self.raiz = "https://knoema.es"
-        self.user_agent = 'Changing user-agent not to be blocked'
+        self.roboturl = "https://knoema.es/robots.txt"
+        self.user_agent = "Changing user-agent not to be blocked"
         self.request_head = {'User-Agent': self.user_agent}
         self.indicadores = list()
         self.lista_indicadores()
-        
+        self.robot = self.url_robot(self.roboturl)
+
 
     def lista_indicadores(self):
         self.indicadores.append("PIB")
@@ -58,6 +61,16 @@ class PaisesScraper:
         estructura = BeautifulSoup(pagina.content, "html.parser")
         return estructura
 
+    @staticmethod
+    def url_robot(url):
+        rp = urllib.robotparser.RobotFileParser()
+        rp.set_url(url)
+        rp.read()
+        return rp
+
+    def url_permitida(self, url):
+        return self.robot.can_fetch("*", url)
+
     def lista_paises_links(self):
         """
         Obtiene la URL de cada país
@@ -71,7 +84,7 @@ class PaisesScraper:
             lista_paises.append((link.string, url))
 
         return lista_paises
-    
+
     def buscar_links_indicadores(self, url):
         """
         Obtiene la URL de cada indicador
@@ -121,7 +134,7 @@ class PaisesScraper:
         todos_tag_a = estructura.find_all("a")
         for tag in todos_tag_a:
             href = tag.get('href', None)
-            if href is not None and "topics" in href and href.startswith('https'):
+            if href is not None and "topics" in href and href.startswith('https') and self.url_permitida(href):
                 estructura_tema = self.baja_html(href)
                 mi_div = estructura_tema.find_all("a", string=self.indicadores)
                 for link in mi_div:
@@ -140,7 +153,7 @@ class PaisesScraper:
         if len(indicadores_no_encontrados) > 0:
             logging.error("Faltan indicadores! {}".format(indicadores_no_encontrados))
             exit(1)
-            
+
     def buscar_valores(self, url):
         """
         Recupera los datos de cada indicador
@@ -165,7 +178,7 @@ class PaisesScraper:
                 lista_valores.append(lista_pares)
             i = i + 1
         return lista_valores
-    
+
     def lista_vacia(self):
         """
         Devuelve una lista de indicadores vacia
@@ -175,7 +188,7 @@ class PaisesScraper:
         lista = list()
         for _ in self.indicadores:
             lista.append(0)
-       
+
         return lista
 
     def obtener_datos(self, fichero):
@@ -192,11 +205,15 @@ class PaisesScraper:
 
             # Obtenemos los datos
             for nombre_pais, url_pais in paises:
+                if not self.url_permitida(url_pais):
+                    continue
                 indicadores = self.buscar_links_indicadores(url_pais)
                 # Creamos lista de años y sus indicadores vacios
                 def_pais = list()
                 def_indicadores = list()
                 for nombre_indicador, url_indicador in indicadores:
+                    if not self.url_permitida(url_indicador):
+                        continue
                     t0 = time.time()
                     valores = self.buscar_valores(url_indicador)
                     retardo_respuesta = time.time() - t0
@@ -265,9 +282,13 @@ class PaisesScraper:
         dicc_paises = dict()
         paises = self.lista_paises_links()
         for nombre_pais, url_pais in paises:
+            if not self.url_permitida(url_pais):
+                continue
             anyos_por_pais = dicc_paises.get(nombre_pais, dict())
             urls_indicadores = self.buscar_links_indicadores(url_pais)
             for nombre_ind, url_ind in urls_indicadores:
+                if not self.url_permitida(url_ind):
+                    continue
                 t0 = time.time()
                 valores = self.buscar_valores(url_ind)
                 retardo_respuesta = time.time() - t0
